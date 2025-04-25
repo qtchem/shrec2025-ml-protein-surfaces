@@ -1,0 +1,75 @@
+
+data:
+    train_csv:  ./data/train_set.csv
+    test_csv:   ./data/test_set.csv
+    spectra_path: ./data/features/
+
+device: cuda
+alpha: 100
+number_coeffs: 5000
+random_seed: 42
+pca_components: 30
+normalize_features: true
+features_list:
+  - [ electrostatic, electrostatic ]
+  - [ electrostatic_neg, electrostatic_neg ]
+  - [ electrostatic_pos, electrostatic_pos ]
+  - [ gaussian_curvature, gaussian_curvature ]
+  - [ principal_curvature, principal_curvature ]
+  - [ shape_index, shape_index ]
+  - [ radial_distance, radial_distance ]
+  - [ normal_x, normal_x ]
+  - [ normal_y, normal_y ]
+  - [ normal_z, normal_z ]
+  - [ electrostatic, gaussian_curvature ]
+  - [ electrostatic, principal_curvature ]
+  - [ electrostatic, radial_distance ]
+  - [ gaussian_curvature, principal_curvature ]
+  - [ gaussian_curvature, shape_index ]
+
+model:
+    siamese:
+        embedding_size:      "len(features_list) * 40"
+        layers:              ["len(features_list) * 40"]
+        dropout_prob:        0.8
+        dropout_final_layer: false
+
+    classifier:
+        layers:              [512, 256, 126]
+        dropout_prob:        0.83
+
+training:
+    folds: 10
+    batch_size: 1024
+    epochs: 2500
+    epoch_classifier: 600
+    epoch_train_classifier: 50   # Train the classifier every `epoch_train_classifier` epochs
+
+    optimizer_siamese:
+        lr: 0.001
+        opt: adam
+        scheduler_stepsize: 500
+        weight_decay: 0.01
+
+    optimizer_classifier:
+        lr: 0.01
+        scheduler_stepsize: 100
+        opt: adam
+        weight_decay: 0.01
+
+loss:
+    margin:       25.0    # Triplet Loss  (Optimal Margin=25)
+    weight_class: false   # Cross Entropy
+    hard_weight:  100     # Weight to update prob for hard example mining
+
+metrics:
+  - accuracy
+  - f1_score
+
+output:
+  checkpoint_dir:    ./checkpoints
+  save_every:        100           # epochs
+  best_only:         true
+  logs_dir:          ./logs
+  log_interval:      10            # batches
+  tensorboard:       true
